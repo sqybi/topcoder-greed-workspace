@@ -1,0 +1,95 @@
+${-- /*
+  Vexorian's c++ tester template for greed. Version 0.8
+  Part of test template which has many features:
+  - Test cases in bracket format for ease of modification.
+  - Very small code for the problem file.
+  - Test results use colors to make them easier to read and notice bad results.
+  - When in *n*x operating systems, it runs each test case in a separate,
+    forked process. A runtime error in a test case won't halt execution of
+    later test cases. Globals don't need to  be initialized manually.
+  - Can temporarily disable test cases.
+  - Three verbosity modes:
+    * FULL_REPORT : First runs all test cases with verbose output. Then shows
+                    a brief report with most relevant info.
+    * NO_REPORT   : If you don't need the report, it is replaced by a single
+                    line of colored result characters and score.
+    * ONLY_REPORT : Shows only the mentioned report.
+
+  - Requires tester.cpp, placed in a folder ".." relative to the output file
+    (You can change the #include "../tester.cpp" line).
+
+  - Requires Greed 2.0 which is in beta.
+    You can use 1.5 if you replace $(p.Num) with _$(p.Name)
+  - To disable multi process behavior, #define DISABLE_THREADS before
+    including tester.cpp.
+
+  - Template options:
+    * runMultipleProcesses: default is true.
+        Runs each test case in a single process. This allows tester
+        to detect runtime errors and there is no need to reset globals.
+
+    * localTestTimeFactor : The problem's time limit will be multiplied by
+                            this value (unless it is set to false)
+                            Computers with much different run speed than
+                            TC might need to tweak.
+    * compactMode : Three options: COMPACT_REPORT, FULL_REPORT, ONLY_REPORT
+                    as described above.
+    * singleFile : It will render the dualcolor-tester in the same file
+                   instead of using it separately. Use in case the
+                   requirement for separate file is too complicated to
+                   fulfill.
+    * disableColors: false by default. If true it will not use ANSI color codes.
+    * customTesterLocation :
+        false by default. If it instead had a string location, it will
+        include this customTesterLocation instead of "tester.cpp"
+
+  (c) 2013 Victor Hugo Soliz Kuncar, ZLIB/LibPNG license
+*/ }
+//------------------------------------------------------------------------------
+const double CASE_TIME_OUT = ${Problem.TimeLimitSeconds}${if Options.localTestTimeFactor} * ${Options.localTestTimeFactor}${end};
+
+set<int> runT;
+bool disabledTest(int x)
+{
+  if (runT.empty()) return x < 0;
+  else return runT.count(x) == 0;
+}
+template<class I, class O> vector<pair<I,O>> getTestCases() { return {
+${<foreach Examples e}
+  { { ${foreach e.Input in , }${if in.Param.Type.Array}{${foreach in.ValueList v ,}${v}${end}}${else}${in.Value}${end}${end} }, {${if Method.ReturnType.Array} {${foreach e.Output.ValueList v ,}${v}${end}} ${else}${ e.Output }${end}} },
+${<end}
+  // Your custom test goes here:
+  //{ { ${foreach Method.Params p , }${if p.Type.Array}{}${end}${end}}, {} },
+};}
+
+//------------------------------------------------------------------------------
+// Tester code:
+${<if Options.disableColors}
+#define DISABLE_COLORS
+${<end}
+${if Options.runMultipleProcesses}//${end}#define DISABLE_THREADS
+${<if Options.singleFile}
+${<Dependencies.dualcolor-tester.Output}
+${<else}
+${<if Options.customTesterLocation}
+#include "${Options.customTesterLocation}"
+${<else}
+#include "tester.cpp"
+${<end}
+${<end}
+struct input {
+  ${foreach Method.Params p}${p.Type} p${p.Index};${end}
+
+  ${Method.ReturnType} run(${ClassName}* x) {
+    return x->${Method.Name}(${foreach Method.Params p ,}p${p.Index}${end});
+  }
+  void print() { Tester::printArgs(${foreach Method.Params p ,}p${p.Index}${end}); }
+};
+
+int main(int argc, char* argv[]) {
+  for (int i = 1; i < argc; i++) runT.insert(atoi(argv[i]));
+  return Tester::runTests<${ClassName}>(
+    getTestCases<input, Tester::output<${Method.ReturnType}>>(), disabledTest,
+    ${Problem.Score}, ${CreateTime}, CASE_TIME_OUT, Tester::${Options.compactMode}
+  );
+}
