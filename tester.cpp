@@ -68,7 +68,7 @@ const int    ONLY_REPORT    = 2;
 #endif
 
 // Configuration:
-const string COMMUNICATION_FILE = "E:\\Program Files\\TopCoder Arena\\Workspace\\topcoder_vx_tester_communicate";
+const string COMMUNICATION_FILE = "/tmp/topcoder_vx_tester_communicate";
 const int    MAX_REPORT_LENGTH = 73;
 const int    BAR_LENGTH        = 73; //length of the bar === that separates test cases
 const string BAR_COLOR    = NORMAL_FAINT;  //The bar ==== color
